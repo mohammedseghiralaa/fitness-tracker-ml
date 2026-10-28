@@ -16,8 +16,8 @@ def load_row():
 def load_clean():
     train=pd.read_csv(PROCESSED/"train_clean.csv")
     test=pd.read_csv(PROCESSED/"test_clean.csv")
+    print(train.shape)
     return train,test
-
 def split_xy(df):
     X=df.drop(columns=[TARGET,GROUP])
     Y=df[TARGET]
