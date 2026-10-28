@@ -1,5 +1,5 @@
 import pandas as pd
-from load_data import GROUP,PROCESSED,TARGET,load_row
+from fitness_tracker.src.load_data import GROUP,PROCESSED,TARGET,load_row
 
 
 def audit(df,name):

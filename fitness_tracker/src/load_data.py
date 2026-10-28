@@ -12,7 +12,6 @@ def load_row():
     test=pd.read_csv(RAW/"test.csv")
     return train,test
 
-load_row()
 
 def load_clean():
     train=pd.read_csv(PROCESSED/"train_clean.csv")
