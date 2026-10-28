@@ -1,61 +1,102 @@
-# Fitness_Tracker
+# Smart Fitness Tracker: Human Activity Recognition
 
-<a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
-    <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
-</a>
+Classifying 6 human activities from smartphone sensor data using machine learning,
+evaluated on **subjects the model has never seen**.
 
-Smart fitness tracker: recognizing human activities from smartphone and wearable sensor data using machine learning
+## Key Result
 
-## Project Organization
+| Metric                         | Value                       |
+| ------------------------------ | --------------------------- |
+| Macro-F1 (9 held-out subjects) | **0.952**                   |
+| Accuracy                       | **95%**                     |
+| Model                          | Logistic Regression (C=0.3) |
+
+## Problem
+
+Recognize what a person is doing (walking, walking upstairs, walking downstairs,
+sitting, standing, laying) from accelerometer and gyroscope signals.
+
+## Dataset
+
+[UCI HAR](https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones):
+30 volunteers, waist-mounted smartphone, 561 engineered features per window (2.56 s, 50 Hz).
+Train: 7,352 samples (21 subjects). Test: 2,947 samples (9 subjects).
+
+## Methodology
+
+- **Subject-wise split:** no subject appears in both train and test, so results
+  reflect generalization to new people.
+- **Data audit:** no missing values or duplicates; classes balanced (ratio ~1.4).
+- **Outliers:** analyzed with IQR (global and within-class) and Isolation Forest.
+  Global IQR flagged walking and lying samples only because static activities dominate;
+  within-class outliers were 3.45%. Features are bounded in [-1, 1]. Outliers were kept.
+- **No leakage:** scaling is done inside a Pipeline, fitted on training folds only.
+- **Model selection:** subject-wise 5-fold CV (GroupKFold) on train only.
+  Test set used once.
+
+## Model Comparison (CV macro-F1)
+
+| Model               | Before tuning | After tuning |
+| ------------------- | ------------- | ------------ |
+| Logistic Regression | 0.934         | 0.934        |
+| SVM (RBF)           | 0.930         | 0.932        |
+| Random Forest       | 0.917         | n/a          |
+
+Tuning changed results by less than 0.3 points, so the simplest model was chosen.
+
+## Test Results
+
+![Confusion matrix](reports/figures/09_confusion_matrix.png)
+
+| Activity           | F1   |
+| ------------------ | ---- |
+| LAYING             | 0.99 |
+| WALKING            | 0.97 |
+| WALKING_DOWNSTAIRS | 0.97 |
+| WALKING_UPSTAIRS   | 0.95 |
+| SITTING            | 0.92 |
+| STANDING           | 0.92 |
+
+**Error analysis:** most errors are SITTING predicted as STANDING (60 samples).
+Both are near-static postures that differ only in subtle torso tilt.
+Walking variants are also confused occasionally.
+
+## Exploratory Analysis
+
+![PCA](reports/figures/05_pca.png)
+![Top features](reports/figures/03_top_features.png)
+
+## Run It
+
+```bash
+git clone https://github.com/mohammedseghiralaa/fitness-tracker-ml.git
+cd fitness-tracker-ml
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+
+python -m fitness_tracker.clean
+python -m fitness_tracker.eda
+python -m fitness_tracker.tune
+python -m fitness_tracker.final_test
+```
+
+Place `train.csv` and `test.csv` in `data/raw/` (not included in the repo).
+
+## Project Structure
 
 ```
-├── LICENSE            <- Open-source license if one is chosen
-├── Makefile           <- Makefile with convenience commands like `make data` or `make train`
-├── README.md          <- The top-level README for developers using this project.
-├── data
-│   ├── external       <- Data from third party sources.
-│   ├── interim        <- Intermediate data that has been transformed.
-│   ├── processed      <- The final, canonical data sets for modeling.
-│   └── raw            <- The original, immutable data dump.
-│
-├── docs               <- A default mkdocs project; see www.mkdocs.org for details
-│
-├── models             <- Trained and serialized models, model predictions, or model summaries
-│
-├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-│                         the creator's initials, and a short `-` delimited description, e.g.
-│                         `1.0-jqp-initial-data-exploration`.
-│
-├── pyproject.toml     <- Project configuration file with package metadata for 
-│                         fitness_tracker and configuration for tools like black
-│
-├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-│
-├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-│   └── figures        <- Generated graphics and figures to be used in reporting
-│
-├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-│                         generated with `pip freeze > requirements.txt`
-│
-├── setup.cfg          <- Configuration file for flake8
-│
-└── fitness_tracker   <- Source code for use in this project.
-    │
-    ├── __init__.py             <- Makes fitness_tracker a Python module
-    │
-    ├── config.py               <- Store useful variables and configuration
-    │
-    ├── dataset.py              <- Scripts to download or generate data
-    │
-    ├── features.py             <- Code to create features for modeling
-    │
-    ├── modeling                
-    │   ├── __init__.py 
-    │   ├── predict.py          <- Code to run model inference with trained models          
-    │   └── train.py            <- Code to train models
-    │
-    └── plots.py                <- Code to create visualizations
+fitness_tracker/   code (load, clean, eda, tune, final_test)
+data/              raw and processed data (git-ignored)
+models/            saved models
+reports/figures/   plots
 ```
 
---------
+## Next Steps
 
+- 1D-CNN on raw sensor signals
+- FastAPI + Streamlit demo
+
+## License
+
+MIT
